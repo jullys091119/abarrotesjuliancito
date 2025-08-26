@@ -1,5 +1,56 @@
 @import "tailwindcss";
 
-@config "../tailwind.config.js"
+@layer utilities {
+
+  .cardProvider {
+    flex-shrink: 0;
+    height: 165px !important;
+    max-width: 200px;
+  }
+
+  .woocommerce {
+    bottom: 6px;
+    top: 50%;
+    display: flex;
+  }
+
+  .gapGridProducts {
+    /* gap: 15px !important; */
+  }  
+
+  @media (max-width: 663px) {
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(111px, 1fr)) !important;
+    flex-wrap: wrap !important;
+  }
+}
+  .noScrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .noScrollbar::-webkit-scrollbar {
+    display: none;
+  }
 
 
+  @media (min-width: 1024px) {
+    .containerSlider {
+      flex-wrap: nowrap;
+    }
+  }
+
+  @media (max-width: 1024px) and (min-width: 768px) {
+    .containerSlider {
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .woocommerce {
+      display: none !important;
+    }
+  }
+}
+
+@config "../tailwind.config.js";
