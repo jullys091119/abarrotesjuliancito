@@ -3,6 +3,7 @@ import { ShoppingCart, Heart } from "lucide-react";
 import { Button } from "@heroui/button";
 import { Badge } from "@heroui/badge";
 import { useMyContext } from "@/app/context/context";
+import { useEffect } from "react";
 
 export default function Products() {
   const {
@@ -12,6 +13,10 @@ export default function Products() {
     quantity,
     products,
   } = useMyContext();
+
+  useEffect(() => {
+    console.log(productPerProvedor)
+  }, [productPerProvedor])
 
   return (
     <div className="noScrollbar py-12">
@@ -26,14 +31,15 @@ export default function Products() {
           flex-wrap
         "
       >
-      {(productPerProvedor.length ? productPerProvedor : products)?.map((item) => (
+        {(productPerProvedor.length ? productPerProvedor : products)?.map((item) => (
           <Card
             key={item.id}
             className="h-[286px] relative w-[160px]"
             shadow="sm"
           >
+
             <Badge
-              content={quantity[item.proveedor]?.[item.id] || 0}
+              content={quantity[item.proveedor]?.[item.id]?.cantidad || 0}
               shape="circle"
               className="absolute top-[14px] right-5 z-2"
             />
@@ -55,7 +61,7 @@ export default function Products() {
                 aria-label="Incrementar"
                 color="danger"
                 variant="faded"
-                onPress={() => addQuantityProducts(item.proveedor, item.id)}
+                onPress={() => addQuantityProducts(item.proveedor, item.id, item.nombre, item.precio, item.imagen)}
               >
                 <span>+</span>
               </Button>
