@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { db } from "../../firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 
 // ====================== TIPOS ======================
 interface Product {
@@ -24,6 +24,8 @@ interface Provider {
 type Producto = {
   cantidad: number;
   nombre: string;
+  precio: number;
+  imagen: string;
 };
 
 type QuantityState = {
@@ -41,7 +43,7 @@ interface MyContextType {
   getData: () => void;
   getProducts: () => void;
   showProductsPerProveedor: (name: string) => void;
-  addQuantityProducts: (proveedor: string, id: string, nombre: string) => void;
+  addQuantityProducts: (proveedor: string, id: string, nombre: string, precio: number, imagen: string) => void;
   restQuantityProducts: (proveedor: string, id: string) => void;
   getTotalById: (proveedor: string, id: string) => string;
   getTotalGeneral: () => string;
@@ -82,15 +84,11 @@ export const MyContextProvider = ({ children }: { children: ReactNode }) => {
     setAllProducts(items);
   };
 
-  const showProductsPerProveedor = async (name: string) => {
-    const q = query(collection(db, "productos"), where("proveedor", "==", name.trim()));
-    const querySnapshot = await getDocs(q);
-    const items: Product[] = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      precio: Number(doc.data().precio),
-      cantidad: Number(doc.data().cantidad) || 0,
-    })) as Product[];
+  // 🚀 Ahora solo filtramos en memoria, no en Firestore
+  const showProductsPerProveedor = (name: string) => {
+    const items = allProducts.filter(
+      (p) => p.proveedor.toLowerCase().trim() === name.toLowerCase().trim()
+    );
     setProductPerProvedor(items);
     setProducts(items);
   };
@@ -106,48 +104,46 @@ export const MyContextProvider = ({ children }: { children: ReactNode }) => {
           nombre,
           precio,
           imagen,
-
         },
       },
     }));
   };
 
   const restQuantityProducts = (proveedor: string, id: string) => {
-  setQuantity((prev) => {
-    const currentCantidad = prev[proveedor]?.[id]?.cantidad || 0;
+    setQuantity((prev) => {
+      const currentCantidad = prev[proveedor]?.[id]?.cantidad || 0;
 
-    if (currentCantidad <= 1) {
-      const newProveedor = { ...prev[proveedor] };
-      delete newProveedor[id];
+      if (currentCantidad <= 1) {
+        const newProveedor = { ...prev[proveedor] };
+        delete newProveedor[id];
 
-      // Si ya no quedan productos, eliminamos el proveedor
-      if (Object.keys(newProveedor).length === 0) {
-        const newState = { ...prev };
-        delete newState[proveedor];
-        return newState;
+        // Si ya no quedan productos, eliminamos el proveedor
+        if (Object.keys(newProveedor).length === 0) {
+          const newState = { ...prev };
+          delete newState[proveedor];
+          return newState;
+        }
+
+        return { ...prev, [proveedor]: newProveedor };
       }
 
-      return { ...prev, [proveedor]: newProveedor };
-    }
-
-    return {
-      ...prev,
-      [proveedor]: {
-        ...prev[proveedor],
-        [id]: {
-          ...prev[proveedor][id],
-          cantidad: currentCantidad - 1,
+      return {
+        ...prev,
+        [proveedor]: {
+          ...prev[proveedor],
+          [id]: {
+            ...prev[proveedor][id],
+            cantidad: currentCantidad - 1,
+          },
         },
-      },
-    };
-  });
-};
+      };
+    });
+  };
 
   const getTotalById = (proveedor: string, id: string): string => {
     const producto = quantity[proveedor]?.[id];
     if (!producto) return "0.00";
-    const product = allProducts.find((p) => p.id === id);
-    return product ? (producto.cantidad * product.precio).toFixed(2) : "0.00";
+    return (producto.cantidad * producto.precio).toFixed(2);
   };
 
   const getTotalGeneral = (): string => {
@@ -155,8 +151,7 @@ export const MyContextProvider = ({ children }: { children: ReactNode }) => {
     for (const proveedor in quantity) {
       for (const id in quantity[proveedor]) {
         const producto = quantity[proveedor][id];
-        const product = allProducts.find((p) => p.id === id);
-        if (product) total += producto.cantidad * product.precio;
+        total += producto.cantidad * producto.precio;
       }
     }
     return total.toFixed(2);
